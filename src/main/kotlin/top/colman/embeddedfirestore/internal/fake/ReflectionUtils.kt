@@ -1,5 +1,5 @@
 /*
- *    Copyright 2019 Leonardo Colman Lopes
+ *    Copyright 2020 Leonardo Colman Lopes
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -30,4 +30,7 @@ internal fun <T> Class<T>.createInstance(): T = objenesis.newInstance(this)
 
 internal inline fun <reified T> notFrom(): Junction<ByteCodeElement> = not(isDeclaredBy(T::class.java))
 
+internal inline fun <reified T> from(): Junction<ByteCodeElement> = isDeclaredBy(T::class.java)
+
 internal fun notNamed(name: String): Junction<NamedElement> = not(named(name))
+

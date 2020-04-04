@@ -1,5 +1,5 @@
 /*
- *    Copyright 2019 Leonardo Colman Lopes
+ *    Copyright 2020 Leonardo Colman Lopes
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -28,6 +28,13 @@ public class EmbeddedFirestore {
 }
 
 public interface FirestoreInitialization {
-    
-    public fun createCollection(collectionId: String)
+
+    public fun createCollection(collectionId: String, collectionInit: CollectionInitialization.() -> Unit = {})
+}
+
+public interface CollectionInitialization {
+    public fun createDocument(id: String, values: Map<String, Any?>)
+    public fun createDocument(id: String, pojo: Any)
+    public fun createDocument(values: Map<String, Any?>)
+    public fun createDocument(pojo: Any)
 }

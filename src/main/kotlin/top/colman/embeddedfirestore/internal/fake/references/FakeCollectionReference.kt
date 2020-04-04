@@ -1,5 +1,5 @@
 /*
- *    Copyright 2019 Leonardo Colman Lopes
+ *    Copyright 2020 Leonardo Colman Lopes
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -19,38 +19,67 @@ package top.colman.embeddedfirestore.internal.fake.references
 import com.google.api.core.ApiFuture
 import com.google.cloud.firestore.CollectionReference
 import com.google.cloud.firestore.DocumentReference
+import com.google.cloud.firestore.Firestore
 import com.google.cloud.firestore.Query
 import net.bytebuddy.ByteBuddy
+import net.bytebuddy.description.method.MethodDescription
 import net.bytebuddy.implementation.MethodDelegation
+import net.bytebuddy.matcher.ElementMatchers.isPublic
 import top.colman.embeddedfirestore.internal.fake.createInstance
+import top.colman.embeddedfirestore.internal.fake.from
+import top.colman.embeddedfirestore.internal.fake.future.InstantApiFuture
 import top.colman.embeddedfirestore.internal.fake.notFrom
 import top.colman.embeddedfirestore.internal.fake.notNamed
 
-
+@Suppress("TooManyFunctions")
 internal class FakeCollectionReference(
+    private val firestore: Firestore,
+    private val path: String,
     private val collectionId: String
 ) {
     
-    private val documents: MutableList<Map<String, Any>> = mutableListOf()
+    private val documents: MutableMap<String, FakeDocumentReference> = mutableMapOf()
+
+    // My methods
+    
+    fun delete(id: String) {
+        documents.remove(id)
+    }
+    
+    fun setDocument(id: String, fakeDocumentReference: FakeDocumentReference) {
+        documents[id] = fakeDocumentReference
+    }
+        
+        
+    // CollectionReference methods
     
     fun getId(): String = collectionId
     
     fun getParent(): DocumentReference = TODO()
     
-    fun getPath(): String = TODO()
+    fun getPath(): String = path
     
-    fun document(): DocumentReference = TODO()
+    fun document(): DocumentReference = FakeDocumentReference(mutableMapOf(), this).asDocumentReference()
     
-    fun document(childPath: String): DocumentReference = TODO()
+    fun document(childPath: String): DocumentReference = 
+        FakeDocumentReference(
+            mutableMapOf(),
+            this,
+            childPath.substringAfterLast("/"),
+            childPath
+        ).asDocumentReference()
     
-    fun listDocuments(): Iterable<DocumentReference> = TODO()
+    fun listDocuments(): Iterable<DocumentReference> = documents.values.map { it.asDocumentReference() }
     
     fun add(fields: Map<String, Any>): ApiFuture<DocumentReference> {
-        documents.add(fields)
-        
+        val reference = FakeDocumentReference(fields.toMutableMap(), this)
+        documents[reference.id] = reference
+        return InstantApiFuture(reference.asDocumentReference())
     }
     
     fun add(pojo: Any): ApiFuture<DocumentReference> = TODO()
+    
+    fun getFirestore(): Firestore = firestore
     
     
     /**
@@ -58,9 +87,9 @@ internal class FakeCollectionReference(
      * via simple interfaces or instantiation, and thus we need to create some proxies to delegate
      * to our fake implementation.
      * 
-     * All methods from [CollectionReference] are implemented, except for [CollectionReference::getResourcePath], as it's
-     * package private and used only inside [CollectionReference].
-     * Methods from [Any] and [Query] are also excluded.
+     * All methods from [CollectionReference] are implemented, except for [CollectionReference::getResourcePath], as 
+     * it's package private and used only inside [CollectionReference].
+     * Methods from [Any] are also excluded. Methods from [Query] are delegated to [FakeQuery]
      */
     fun asCollectionReference(): CollectionReference {
         return ByteBuddy()
@@ -69,6 +98,12 @@ internal class FakeCollectionReference(
                 notFrom<Any>().and(notFrom<Query>()).and(notNamed("getResourcePath"))
             )
             .intercept(MethodDelegation.to(this))
+            .method(
+                from<Query>()
+                    .and(notNamed("getFirestore"))
+                    .and(isPublic<MethodDescription>())
+            )
+            .intercept(MethodDelegation.to(FakeQuery(this.documents.values.toList())))
             .make()
             .load(CollectionReference::class.java.classLoader)
             .loaded.createInstance()

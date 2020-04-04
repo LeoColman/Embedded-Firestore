@@ -1,5 +1,5 @@
 /*
- *    Copyright 2019 Leonardo Colman Lopes
+ *    Copyright 2020 Leonardo Colman Lopes
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -28,14 +28,17 @@ import com.google.cloud.firestore.Query
 import com.google.cloud.firestore.Transaction.Function
 import com.google.cloud.firestore.TransactionOptions
 import com.google.cloud.firestore.WriteBatch
+import top.colman.embeddedfirestore.CollectionInitialization
 import top.colman.embeddedfirestore.FirestoreInitialization
 import top.colman.embeddedfirestore.internal.fake.references.FakeCollectionReference
 
+@Suppress("TooManyFunctions")
 internal class FakeFirestore : Firestore, FirestoreInitialization {
     
     private val collectionList = mutableListOf<FakeCollectionReference>()
     
-    override fun collection(path: String): CollectionReference = collectionList.first { it.getPath() == path }.asCollectionReference()
+    override fun collection(path: String): CollectionReference = 
+        collectionList.first { it.getPath() == path }.asCollectionReference()
     
     override fun getAll(vararg documentReferences: DocumentReference?): ApiFuture<MutableList<DocumentSnapshot>> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -95,9 +98,30 @@ internal class FakeFirestore : Firestore, FirestoreInitialization {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
     
-    override fun createCollection(collectionId: String) {
+    override fun createCollection(collectionId: String, collectionInit: CollectionInitialization.() -> Unit) {
         collectionList += FakeCollectionReference(
+            this,
+            collectionId,
             collectionId
-        )
+        ).also { 
+            collectionInit(object : CollectionInitialization {
+                override fun createDocument(id: String, values: Map<String, Any?>) {
+                    it.document(id).set(values).get()
+                }
+
+                override fun createDocument(id: String, pojo: Any) {
+                    it.document(id).set(pojo).get()
+                }
+
+                override fun createDocument(values: Map<String, Any?>) {
+                    it.document().set(values).get()
+                }
+
+                override fun createDocument(pojo: Any) {
+                    it.document().set(pojo).get()
+                }
+
+            })
+        }
     }
 }

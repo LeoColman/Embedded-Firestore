@@ -2,7 +2,7 @@ import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.3.50"
+    id("org.jetbrains.kotlin.jvm") version "1.3.61"
     `maven-publish`
     signing
     id("org.jetbrains.dokka") version "0.9.17"
@@ -20,7 +20,9 @@ repositories {
 dependencies {
     // Kotlin
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    
+    implementation(kotlin("reflect"))
+
+
     // Cloud Firestore
     implementation("com.google.firebase:firebase-admin:6.11.0")
     
@@ -30,8 +32,12 @@ dependencies {
     // Objenesis
     implementation("org.objenesis:objenesis:3.1")
     
-    // KotlinTest
-    testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
+    // Kotest
+    testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.1")
+    testImplementation("io.kotest:kotest-assertions-core-jvm:4.0.1")
+    
+    // Mockk
+    testImplementation("io.mockk:mockk:1.9.3")
 }
 
 detekt {
