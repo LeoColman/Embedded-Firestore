@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "top.colman.embeddedfirestore"
-version = "0.1.0"
+version = "0.1.1"
 
 repositories {
     jcenter()
