@@ -85,6 +85,20 @@ class EmbeddedFirestoreTest : FunSpec({
 
         addedDocument.get().get()["A"] shouldBe "B"
     }
+
+    test("Full getData path should return fields from fake reference") {
+        val firestore = EmbeddedFirestore().createClient {
+            createCollection("coll") {
+                createDocument(mapOf("a" to "b"))
+            }
+        }
+
+        val data = firestore
+            .collection("coll")
+            .whereEqualTo("a", "b").get().get().documents.map { it.data }
+
+        data.single()["a"] shouldBe "b"
+    }
 })
 
 private data class MyPojo(val string: String, val int: Int)

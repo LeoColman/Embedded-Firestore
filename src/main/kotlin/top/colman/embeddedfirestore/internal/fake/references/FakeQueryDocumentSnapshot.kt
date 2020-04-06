@@ -16,20 +16,31 @@
 
 package top.colman.embeddedfirestore.internal.fake.references
 
-import com.google.cloud.firestore.DocumentReference
 import com.google.cloud.firestore.DocumentSnapshot
 import com.google.cloud.firestore.QueryDocumentSnapshot
 import net.bytebuddy.ByteBuddy
+import net.bytebuddy.description.method.MethodDescription
 import net.bytebuddy.implementation.MethodDelegation
+import net.bytebuddy.matcher.ElementMatchers.isPublic
 import top.colman.embeddedfirestore.internal.fake.createInstance
 import top.colman.embeddedfirestore.internal.fake.from
+import top.colman.embeddedfirestore.internal.fake.notNamed
 
-internal fun DocumentSnapshot.asQueryDocumentSnapshot(): QueryDocumentSnapshot {
-    return ByteBuddy()
-        .subclass(QueryDocumentSnapshot::class.java)
-        .method(from<DocumentSnapshot>())
-        .intercept(MethodDelegation.to(this))
-        .make()
-        .load(this::class.java.classLoader)
-        .loaded.createInstance()
+internal class FakeQueryDocumentSnapshot(
+    private val fakeDocumentSnapshot: FakeDocumentSnapshot
+) {
+    fun getData(): Map<String, Any> = fakeDocumentSnapshot.getData()
+    
+    fun asQueryDocumentSnapshot(): QueryDocumentSnapshot {
+        return ByteBuddy()
+            .subclass(QueryDocumentSnapshot::class.java)
+            .method(from<QueryDocumentSnapshot>().and<MethodDescription>(isPublic()).and(notNamed("toObject")))
+            .intercept(MethodDelegation.to(this))
+            .method(from<DocumentSnapshot>().and<MethodDescription>(isPublic()).and(notNamed("toObject")))
+            .intercept(MethodDelegation.to(fakeDocumentSnapshot))
+            .make()
+            .load(this::class.java.classLoader)
+            .loaded.createInstance()
+    }
 }
+
