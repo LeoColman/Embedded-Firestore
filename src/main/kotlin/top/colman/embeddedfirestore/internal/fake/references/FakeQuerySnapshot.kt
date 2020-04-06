@@ -40,7 +40,9 @@ internal class FakeQuerySnapshot(
     }
 
     override fun getDocuments(): MutableList<QueryDocumentSnapshot> =
-        fakeQuery.documentSequence.map { it.get().get().asQueryDocumentSnapshot() }.toMutableList()
+        fakeQuery.documentSequence.map { 
+            FakeQueryDocumentSnapshot(FakeDocumentSnapshot(it)).asQueryDocumentSnapshot() 
+        }.toMutableList()
 
     override fun size(): Int = fakeQuery.documentSequence.toList().size
 }

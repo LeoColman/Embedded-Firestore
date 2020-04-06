@@ -143,7 +143,7 @@ private fun randomId(): String {
 }
 
 private val gson = Gson()
-fun <T> T.asMap(): Map<String, Any> {
+private fun <T> T.asMap(): Map<String, Any> {
     val json = gson.toJson(this)
     return gson.fromJson(json, object : TypeToken<Map<String, Any>>() {}.type)
 }
